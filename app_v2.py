@@ -2,57 +2,214 @@ import streamlit as st
 import random
 import os
 
-# 1. 設定網頁標題與風格（強制寬版版面以利左右分割）
-st.set_page_config(page_title="Kids English Magic Puzzle", layout="wide")
+# 1. 初始化設定網頁佈局
+st.set_page_config(page_title="English Magic Puzzle - Sci-Fi Edition", layout="wide")
 
-# 套用 Figma 風格的自訂 CSS 樣式
+# 2. 頂級賽博朋克 / 科技儀表板 UI 樣式表 (CSS)
 st.markdown("""
 <style>
-    /* 全局背景與字體優化 */
+    /* 將 Streamlit 頂部 header 改為完全透明並移除陰影 */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* 全局深藍黑科技背景 */
     .stApp {
-        background-color: #0F0E17;
-        color: #FFFFFE;
+        background: radial-gradient(circle at 50% 30%, #0B153A 0%, #05081C 70%, #02040A 100%) !important;
+        color: #E2E8F0 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     }
     
-    /* 左側紫色視覺區裝飾 */
-    .left-hero-container {
-        background: linear-gradient(135deg, #6246EA 0%, #3B21B9 100%);
-        padding: 30px;
+    /* 核心：垂直置中佈局 */
+    .block-container {
+        padding-top: 2rem !important; 
+        padding-bottom: 0rem !important;
+        min-height: 90vh; 
+        display: flex;
+        align-items: center; 
+        justify-content: center;
+    }
+    
+    /* 主欄位包裹器 */
+    [data-testid="stHorizontalBlock"] {
+        width: 100%;
+        align-items: center; 
+    }
+
+    /* 照片貼合組件 */
+    .pure-image-card {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0px !important;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .pure-image-card img {
+        object-fit: contain;
+        max-height: 68vh;
+        width: 100%;
+        border-radius: 18px !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important; /* 與 Progress 保持一致 */
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    /* 🎯 基準樣式：頂部進度與狀態列卡片 🎯 */
+    .status-badge-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(18, 26, 62, 0.8);
+        padding: 14px 22px;
+        border-radius: 18px;
+        border: 1px solid rgba(59, 130, 246, 0.2); /* 基準目標邊框 */
+        margin-bottom: 14px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .status-label {
+        font-weight: 700;
+        color: #94A3B8;
+        font-size: 16px;
+        letter-spacing: 0.5px;
+    }
+    .stage-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: #60A5FA;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    
+    /* Streamlit 原生進度條魔改為螢光藍 */
+    .stProgress > div > div > div > div {
+        background-color: #3B82F6 !important;
+        background-image: linear-gradient(90deg, #3B82F6, #8B5CF6) !important;
+    }
+    
+    /* 任務中文提示框 */
+    .duo-hint-box {
+        background: rgba(15, 23, 56, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 20px 24px;
         border-radius: 24px;
-        box-shadow: 0px 10px 30px rgba(98, 70, 234, 0.3);
-        text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .duo-hint-title {
+        color: #38BDF8; 
+        font-size: 13px; 
+        font-weight: 800; 
+        display: block; 
+        text-transform: uppercase; 
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+    }
+    .duo-hint-text {
+        font-size: 24px; 
+        font-weight: 700; 
+        color: #FFFFFF;
+        line-height: 1.4;
     }
     
-    /* 右側任務提示框 */
-    .task-hint-box {
-        background-color: #1F1E26;
-        border-left: 6px solid #6246EA;
-        padding: 15px 20px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-    }
-    
-    /* 答案顯示框 */
+    /* 答案組裝區 */
     .sentence-display-box {
-        background: rgba(98, 70, 234, 0.1);
-        border: 2px dashed #6246EA;
-        padding: 20px;
-        border-radius: 16px;
-        min-height: 80px;
+        background: rgba(9, 15, 38, 0.9);
+        border: 2px dashed rgba(96, 165, 250, 0.4);
+        padding: 18px;
+        min-height: 72px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
-        color: #FFFFFE;
-        font-weight: bold;
-        margin-top: 15px;
-        margin-bottom: 25px;
+        font-size: 24px;
+        color: #60A5FA;
+        font-weight: 700;
+        border-radius: 20px;
+        margin-bottom: 18px;
+        text-align: center;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+    }
+
+    /* 🎯 修正：點選模塊按鈕 —— 邊框完美同步 Progress 邊框 🎯 */
+    div.stButton > button {
+        background: rgba(18, 26, 62, 0.8) !important;
+        color: #94A3B8 !important;
+        font-size: 19px !important; 
+        font-weight: 700 !important;
+        /* 完全複製 Progress 的圓角、1px四邊等寬線與色彩 */
+        border: 1px solid rgba(59, 130, 246, 0.2) !important; 
+        border-radius: 18px !important;
+        padding: 12px 20px !important;
+        transition: all 0.2s ease !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* 懸浮時讓同步的邊框微微發光 */
+    div.stButton > button:hover:not([disabled]) {
+        background: rgba(25, 37, 84, 0.9) !important;
+        border-color: rgba(96, 165, 250, 0.6) !important; /* 點亮邊框 */
+        color: #FFFFFF !important;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+    }
+    div.stButton > button:active:not([disabled]) {
+        transform: scale(0.98);
+    }
+    
+    /* 禁用按鈕（已被選取的字塊） */
+    div.stButton > button[disabled] {
+        background: rgba(10, 15, 30, 0.4) !important;
+        color: #475569 !important;
+        border: 1px solid rgba(59, 130, 246, 0.05) !important;
+        opacity: 0.4;
+        box-shadow: none !important;
+    }
+
+    /* 🎯 修正：重來按鈕 —— 邊框完美同步 Progress 邊框 🎯 */
+    .reset-btn div.stButton > button {
+        background: rgba(30, 41, 59, 0.6) !important;
+        color: #94A3B8 !important;
+        font-size: 16px !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important; /* 同步 Progress 線條 */
+        border-radius: 18px !important;
+    }
+    .reset-btn div.stButton > button:hover {
+        background: rgba(239, 68, 68, 0.15) !important;
+        border-color: rgba(239, 68, 68, 0.5) !important;
+        color: #FCA5A5 !important;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+    }
+
+    /* 下一題前進按鈕（保持幻彩高級感，但圓角對齊） */
+    div.stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #C084FC 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 18px !important;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4) !important;
+    }
+    div.stButton > button[data-testid="baseButton-primary"]:hover {
+        background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #D8B4FE 100%) !important;
+        box-shadow: 0 6px 25px rgba(124, 58, 237, 0.6) !important;
+    }
+    
+    .stAlert {
+        background-color: rgba(15, 23, 42, 0.8) !important;
+        color: #FFFFFF !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
+    }
+    
+    [data-testid="stVerticalBlock"] {
+        gap: 0.6rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 2. 初始化 30 張本地圖片的資料庫
+# 3. 載入核心資料庫 (保持 30 張圖資料)
 @st.cache_data
 def get_expanded_game_data():
     return [
@@ -149,7 +306,7 @@ def get_expanded_game_data():
             "sentences": [
                 {"correct_words": ["The cold rain", "falls", "on the dark", "window"], "hint_zh": "冰冷的雨水落在黑暗的窗戶上。"},
                 {"correct_words": ["A heavy storm", "hits", "the big", "city"], "hint_zh": "一場大風暴襲擊了這座大城市。"},
-                {"correct_words": ["The weather tonight", "looks", "very wet", "and gray"], "hint_zh": "今天晚補的天氣看起來非常潮濕且陰暗。"}
+                {"correct_words": ["The weather tonight", "looks", "very wet", "and gray"], "hint_zh": "今天晚上的天氣看起來非常潮濕且陰暗。"}
             ]
         },
         {
@@ -243,7 +400,7 @@ def get_expanded_game_data():
         {
             "id": 24, "img_path": "24.png", "hint": "Cozy kitchen",
             "sentences": [
-                {"correct_words": ["The tidy kitchen", "looks", "very bright", "and clean"], "hint_zh": "整潔的廚房看起來非常明亮且乾淨。"},
+                {"correct_words": ["The tidy kitchen", "looks", "very bright", "and clean"], "hint_zh": "整潔的廚房看起來意謂著明亮且乾淨。"},
                 {"correct_words": ["A kind mother", "cooks", "some hot", "soup"], "hint_zh": "親切的媽媽正在煮一些熱湯。"},
                 {"correct_words": ["The happy family", "gathers", "near the warm", "stove"], "hint_zh": "快樂的一家人聚集在溫暖的爐灶旁。"}
             ]
@@ -269,7 +426,7 @@ def get_expanded_game_data():
             "sentences": [
                 {"correct_words": ["The sweet cake", "has", "fresh red", "strawberries"], "hint_zh": "甜美的蛋糕上有新鮮的紅草莓。"},
                 {"correct_words": ["A hungry person", "eats", "the delicious", "dessert"], "hint_zh": "飢餓的人吃著美味的甜點。"},
-                {"correct_words": ["The white plate", "holds", "a big", "slice"], "hint_zh": "白色的盤子裝著一大塊（蛋糕）。"}
+                {"correct_words": ["The white plate", "holds", "a big", "slice"], "hint_zh": "白色的盤子裝著一大塊。"}
             ]
         },
         {
@@ -300,7 +457,6 @@ def get_expanded_game_data():
 
 TOTAL_IMAGES = 30
 
-# 初始化狀態
 if "game_started" not in st.session_state:
     st.session_state.game_started = False
 if "current_img_idx" not in st.session_state:
@@ -316,20 +472,15 @@ if "img_order" not in st.session_state:
 
 all_images_data = get_expanded_game_data()
 
-# --- 遊戲大標題 ---
-st.title("🧙‍♂️ Letmeask 英語魔法拼圖 (Figma 旗艦版)")
-st.markdown("---")
-
-# 開始 / 結束畫面
 if not st.session_state.game_started:
     st.markdown("""
-    <div class='left-hero-container'>
-        <h2 style='color:#FFFFFE; margin:0;'>✨ Toda pergunta tem uma resposta. ✨</h2>
-        <p style='color:#E4ECFC; opacity:0.9;'>看圖學語法，點選正確的魔法模組，挑戰 90 道語感關卡！</p>
+    <div class='duo-hint-box' style='text-align: center; width: 100%; padding: 40px;'>
+        <h2 style='color:#38BDF8; margin:0; font-weight: 800; font-size: 28px;'>English Magic Puzzle</h2>
+        <p style='color:#94A3B8; margin-top: 10px; font-size: 18px; font-weight: 600;'>觀察精美的插圖，點選右側字塊組裝出完美的英文句子吧！</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if st.button("🚀 開始拼圖大挑戰 (Start)", type="primary", use_container_width=True):
+    if st.button("🚀 Start Learning / 開始挑戰", type="primary", use_container_width=True):
         st.session_state.game_started = True
         random.shuffle(st.session_state.img_order)
         st.session_state.current_img_idx = 0
@@ -350,15 +501,17 @@ else:
         img_data = all_images_data[real_img_id]
         sentence_data = img_data["sentences"][sub_stage]
         
-        # 🟢 核心工程優化：將頁面一分為二 (左邊照片，右邊題目選項)
+        # 左右對稱大版面配置
         left_col, right_col = st.columns([5, 5], gap="large")
         
-        # === 左邊：照片展示區 ===
+        # === 【左邊：圖片面板】 ===
         with left_col:
-            st.markdown(f"### 🖼️ 圖片關卡：第 {img_stage + 1} / {TOTAL_IMAGES} 張")
-            
-            # Windows 防呆檢測機制 (8.png 或 8.png.png 自動通配)
-            possible_paths = [img_data["img_path"], img_data["img_path"] + ".png"]
+            base_name = str(real_img_id + 1)
+            possible_paths = [
+                img_data["img_path"], 
+                f"{base_name}.png", 
+                f"{base_name}.PNG"
+            ]
             final_path = None
             for p in possible_paths:
                 if os.path.exists(p):
@@ -366,69 +519,68 @@ else:
                     break
             
             if final_path:
-                # 仿照 Figma 加點圓角美化
+                st.markdown("<div class='pure-image-card'>", unsafe_allow_html=True)
                 st.image(final_path, use_container_width=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             else:
-                st.error(f"🚨 找不到圖片檔案: {img_data['img_path']}")
-                
-            # 左側小卡片進度提示
+                st.error(f"🚨 找不到圖片檔案，請確認 {base_name}.png 存在於資料夾中。")
+
+        # === 【右邊：科技操控面板區】 ===
+        with right_col:
+            # 1. 頂部狀態徽章欄
             stars = ["⚪", "⚪", "⚪"]
             for s in range(sub_stage): stars[s] = "⭐"
             stars[sub_stage] = "🔄"
             
             st.markdown(f"""
-            <div style='background-color:#1F1E26; padding:15px; border-radius:12px; text-align:center;'>
-                <span style='font-size:16px;'>本圖進度: {' '.join(stars)}</span>
+            <div class='status-badge-container'>
+                <span class='status-label'>⚡ Progress: {' '.join(stars)}</span>
+                <span class='stage-badge'>Stage {img_stage + 1} / {TOTAL_IMAGES}</span>
             </div>
             """, unsafe_allow_html=True)
+            
+            # 原生進度條
             st.progress((img_stage * 3 + sub_stage) / (TOTAL_IMAGES * 3))
-
-        # === 右邊：題目選項與互動區 ===
-        with right_col:
-            st.markdown("### 🧩 任務與單字模組")
             
-            # 任務提示框
+            # 2. 中文提示科技面板
             st.markdown(f"""
-            <div class='task-hint-box'>
-                <span style='color:#94A1B2; font-size:14px; display:block;'>請拼出對應此圖片的句子:</span>
-                <strong style='font-size:18px; color:#FFFFFE;'>{sentence_data['hint_zh']}</strong>
+            <div class='duo-hint-box'>
+                <span class='duo-hint-title'>Description / 中文提示</span>
+                <div class='duo-hint-text'>{sentence_data['hint_zh']}</div>
             </div>
             """, unsafe_allow_html=True)
             
-            # 選項方塊區
-            st.markdown("##### 💡 點選以下模組方塊：")
-            cols = st.columns(2)  # 改為2列，按鈕更大、更好點選
+            # 3. 點選字塊拼句區
+            st.markdown("<p style='font-weight:700; color:#94A3B8; font-size:15px; margin: 0 0 10px 4px;'>Word Bank / 點選模塊：</p>", unsafe_allow_html=True)
+            
+            cols = st.columns(2)
             for i, word in enumerate(st.session_state.shuffled_words):
                 with cols[i % 2]:
                     is_disabled = word in st.session_state.selected_words
-                    # 套用主題色按鈕
-                    if st.button(word, key=f"w_{img_stage}_{sub_stage}_{i}_{word}", disabled=is_disabled, use_container_width=True):
+                    if st.button(word, key=f"btn_{img_stage}_{sub_stage}_{i}_{word}", disabled=is_disabled, use_container_width=True):
                         st.session_state.selected_words.append(word)
                         st.rerun()
             
-            st.markdown("---")
-            
-            # 你的句子 (Your Sentence) 顯示區
-            st.markdown("##### 📝 你的組合句子 (Your Sentence)：")
+            # 4. 玩家答案顯示區
+            st.markdown("<p style='font-weight:700; color:#94A3B8; font-size:15px; margin: 16px 0 6px 4px;'>Your Sentence / 組合的句子：</p>", unsafe_allow_html=True)
             player_sentence = " ".join(st.session_state.selected_words)
+            st.markdown(f"<div class='sentence-display-box'>{player_sentence if player_sentence else 'Select words from above to build...'}</div>", unsafe_allow_html=True)
             
-            # 用自訂 CSS 框表現 Figma 般的文字輸入感
-            st.markdown(f"<div class='sentence-display-box'>{player_sentence if player_sentence else '(等待選擇方塊...)'}</div>", unsafe_allow_html=True)
-            
-            # 底部控制鈕
+            # 5. 底部動作控制
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
-                if st.button("🗑️ 清除重來 (Reset)", use_container_width=True):
+                st.markdown("<div class='reset-btn'>", unsafe_allow_html=True)
+                if st.button("🗑️ Reset / 重來", use_container_width=True):
                     st.session_state.selected_words = []
                     st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
                     
-            # 自動判定與回饋
             is_correct = st.session_state.selected_words == sentence_data["correct_words"]
             if len(st.session_state.selected_words) == len(sentence_data["correct_words"]):
                 if is_correct:
-                    st.success("🎉 完美！語法順序完全正確！", icon="✅")
+                    st.toast("✨ System Verified: Perfect Match!", icon="🟢")
                     with btn_col2:
-                        next_btn_label = "➡️ 下一句 (Next)" if sub_stage < 2 else "🎆 完成本圖，解鎖下一張！"
+                        next_btn_label = "➡️ Next Sentence" if sub_stage < 2 else "🎆 Next Stage ➡️"
                         if st.button(next_btn_label, type="primary", use_container_width=True):
                             st.session_state.selected_words = []
                             
@@ -447,12 +599,11 @@ else:
                                 st.session_state.shuffled_words = next_words
                             st.rerun()
                 else:
-                    st.error("❌ 組合順序不太對喔，再試試看！", icon="🚨")
+                    st.error("💡 Syntax Order Error! 調整一下單字的順序看看。")
                     
     else:
-        # 全部通關
         st.balloons()
-        st.markdown("<div class='left-hero-container'><h2>🏆 恭喜大腦與小朋友完成全圖通關！</h2><p>成功掌握了 30 張情境圖、90 道語法方塊魔法！</p></div>", unsafe_allow_html=True)
-        if st.button("🔄 重新大挑戰 (Play Again)", type="primary", use_container_width=True):
+        st.markdown("<div class='duo-hint-box' style='text-align:center; width:100%;'><h2>🏆 MISSION ACCOMPLISHED / 全關卡完美通關！</h2></div>", unsafe_allow_html=True)
+        if st.button("🔄 Restart System / 重新挑戰", type="primary", use_container_width=True):
             st.session_state.game_started = False
             st.rerun()
